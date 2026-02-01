@@ -1,0 +1,34 @@
+[33ma2ac90d[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{0}: reset: moving to HEAD
+[33ma2ac90d[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{1}: commit: changed status to live
+[33m5c3101d[m HEAD@{2}: commit: Set up for bootcamp, improved user experience
+[33m59b69b7[m HEAD@{3}: commit: price edit
+[33m66caf8a[m HEAD@{4}: commit: Added ui updates
+[33mfc887f8[m HEAD@{5}: commit: Updated freeclass
+[33mcdda576[m HEAD@{6}: commit: Metadata etc
+[33m6640b09[m HEAD@{7}: commit: Ui Fixes
+[33m69365f2[m HEAD@{8}: commit: ES lint problems
+[33m04d89a3[m HEAD@{9}: commit: Marketing strategy
+[33m00ef19f[m HEAD@{10}: commit: ui polish
+[33m57d74e5[m HEAD@{11}: commit: Finishing
+[33m922f8ab[m HEAD@{12}: commit: Finishings
+[33m47fdeba[m HEAD@{13}: commit: api mismatch error!
+[33mfe58e71[m HEAD@{14}: commit: Eslint Errors
+[33m629e630[m HEAD@{15}: commit: Build Errors
+[33m5bad4a6[m HEAD@{16}: commit: Payments and and checkout!
+[33m99fa1f8[m HEAD@{17}: commit: Build errors fix
+[33m46b31ca[m HEAD@{18}: commit: Picture changes
+[33mf5c5bcd[m HEAD@{19}: commit: Fixed Email Ui
+[33m6be5be2[m HEAD@{20}: commit: removed hyphens
+[33m713b88b[m HEAD@{21}: commit: Ui fixes
+[33m312f15d[m HEAD@{22}: commit: Added freeclass page
+[33m0a26cf4[m HEAD@{23}: commit: fix ui
+[33mfb03dbf[m HEAD@{24}: commit: fixed navbar bug
+[33m3d797d8[m HEAD@{25}: commit: ui fixes
+[33maa12ee0[m HEAD@{26}: commit: ui fixes
+[33m9857160[m HEAD@{27}: commit: worked on Ui
+[33ma481d4d[m HEAD@{28}: commit: fixed tailwind issue
+[33m7a2635a[m HEAD@{29}: checkout: moving from main to main
+[33m7a2635a[m HEAD@{30}: checkout: moving from master to main
+[33m7a2635a[m HEAD@{31}: commit: Initial message
+[33m61c317d[m HEAD@{32}: commit: initial commit
+[33mee741b2[m HEAD@{33}: commit (initial): Initial commit from Create Next App
