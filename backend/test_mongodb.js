@@ -2,8 +2,14 @@ const { MongoClient } = require('mongodb');
 
 // Test MongoDB connection
 async function testConnection() {
-    // Using MongoDB Atlas free tier test database
-    const uri = "mongodb+srv://gichtest:testpassword123@cluster0.mongodb.net/gich_test?retryWrites=true&w=majority";
+    // Using environment variable for connection
+    require('dotenv').config();
+    const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
+
+    if (!uri) {
+        console.error('❌ MONGODB_URI or MONGO_URI not found in environment variables');
+        process.exit(1);
+    }
 
     console.log('🔍 Testing MongoDB connection...\n');
 
