@@ -1,13 +1,14 @@
 const nodemailer = require('nodemailer');
+require('dotenv').config();
 
-// Zoho SMTP with app password
+// Zoho SMTP with app password from environment variables
 const transporter = nodemailer.createTransport({
-    host: 'smtp.zoho.com',
-    port: 465,
+    host: process.env.SMTP_HOST || 'smtp.zoho.com',
+    port: parseInt(process.env.SMTP_PORT) || 465,
     secure: true,
     auth: {
-        user: 'Contact@girlsincryptohub.com',
-        pass: 'mBWr3yDm5UKg',
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
     },
     debug: true,
     logger: true,

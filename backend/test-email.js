@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+require('dotenv').config();
 
 // Zoho Mail SMTP configurations
 const configs = [
@@ -8,8 +9,8 @@ const configs = [
         port: 465,
         secure: true,
         auth: {
-            user: 'Contact@girlsincryptohub.com',
-            pass: 'mBWr3yDm5UKg',
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
         },
     },
     {
@@ -18,8 +19,8 @@ const configs = [
         port: 587,
         secure: false,
         auth: {
-            user: 'Contact@girlsincryptohub.com',
-            pass: 'mBWr3yDm5UKg',
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
         },
     },
     {
@@ -28,8 +29,8 @@ const configs = [
         port: 465,
         secure: true,
         auth: {
-            user: 'Contact@girlsincryptohub.com',
-            pass: 'mBWr3yDm5UKg',
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
         },
     },
     {
@@ -38,8 +39,8 @@ const configs = [
         port: 465,
         secure: true,
         auth: {
-            user: 'Contact@girlsincryptohub.com',
-            pass: 'mBWr3yDm5UKg',
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
         },
     },
 ];
