@@ -52,7 +52,7 @@ export default function TrafficPage() {
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-semibold text-[#1A1A1A] tracking-tight">Traffic Intelligence</h1>
-                <p className="text-sm text-[#9B9B9B] mt-1">See what's working in your funnels</p>
+                <p className="text-sm text-[#9B9B9B] mt-1">See what&apos;s working in your funnels</p>
             </div>
 
             {/* Conversion Funnel */}

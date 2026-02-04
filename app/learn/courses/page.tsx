@@ -151,7 +151,7 @@ export default function MyCoursesPage() {
             {/* No Courses */}
             {enrollments.length === 0 && adminOnlyCourses.length === 0 && (
                 <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-12 border border-white/10 text-center">
-                    <p className="text-gray-400 mb-4">You don't have access to any courses yet.</p>
+                    <p className="text-gray-400 mb-4">You don&apos;t have access to any courses yet.</p>
                     <Link
                         href="/pricing"
                         className="inline-block px-6 py-3 bg-gradient-to-r from-[#F2419C] to-[#ff6bba] text-white rounded-xl font-medium hover:opacity-90 transition"

@@ -12,15 +12,19 @@ const payments_service_1 = require("./payments.service");
 const payments_controller_1 = require("./payments.controller");
 const stripe_webhook_controller_1 = require("./stripe-webhook.controller");
 const enrollments_module_1 = require("../enrollments/enrollments.module");
+const flutterwave_service_1 = require("./flutterwave.service");
+const products_module_1 = require("../products/products.module");
+const email_module_1 = require("../email/email.module");
+const auth_module_1 = require("../auth/auth.module");
 let PaymentsModule = class PaymentsModule {
 };
 exports.PaymentsModule = PaymentsModule;
 exports.PaymentsModule = PaymentsModule = __decorate([
     (0, common_1.Module)({
-        imports: [enrollments_module_1.EnrollmentsModule],
+        imports: [enrollments_module_1.EnrollmentsModule, products_module_1.ProductsModule, email_module_1.EmailModule, auth_module_1.AuthModule],
         controllers: [payments_controller_1.PaymentsController, stripe_webhook_controller_1.StripeWebhookController],
-        providers: [payments_service_1.PaymentsService],
-        exports: [payments_service_1.PaymentsService],
+        providers: [payments_service_1.PaymentsService, flutterwave_service_1.FlutterwaveService],
+        exports: [payments_service_1.PaymentsService, flutterwave_service_1.FlutterwaveService],
     })
 ], PaymentsModule);
 //# sourceMappingURL=payments.module.js.map

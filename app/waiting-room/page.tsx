@@ -58,7 +58,7 @@ function WaitingRoomContent() {
                         </h1>
                         <p className="text-gray-400 mb-8">
                             Our current WhatsApp group has reached capacity.
-                            Please check back soon — we're opening new spots daily!
+                            Please check back soon — we&apos;re opening new spots daily!
                         </p>
                         <Link
                             href="/community"
@@ -73,7 +73,7 @@ function WaitingRoomContent() {
                             Something Went Wrong
                         </h1>
                         <p className="text-gray-400 mb-8">
-                            We couldn't process your request. Please try again.
+                            We couldn&apos;t process your request. Please try again.
                         </p>
                         <Link
                             href="/community"
@@ -85,7 +85,7 @@ function WaitingRoomContent() {
                 ) : (
                     <>
                         <h1 className="text-3xl font-bold text-white font-space mb-4">
-                            You're In! 🎉
+                            You&apos;re In! 🎉
                         </h1>
                         <p className="text-gray-400 mb-8">
                             Welcome to Girls in Crypto Hub! Click below to join our exclusive WhatsApp community.

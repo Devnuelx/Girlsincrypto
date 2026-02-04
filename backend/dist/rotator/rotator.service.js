@@ -20,15 +20,14 @@ let RotatorService = class RotatorService {
     }
     async getNextGroup(tenantSlug, ip, userAgent) {
         const tenant = await this.tenantService.findBySlug(tenantSlug);
-        const groups = await this.prisma.$queryRaw `
-      SELECT * FROM whatsapp_groups 
-      WHERE "tenantId" = ${tenant.id}
-        AND "isActive" = true 
-        AND "clickCount" < "maxClicks"
-      ORDER BY "createdAt" ASC
-      LIMIT 1
-    `;
-        const availableGroup = groups[0];
+        const groups = await this.prisma.whatsappGroup.findMany({
+            where: {
+                tenantId: tenant.id,
+                isActive: true,
+            },
+            orderBy: { createdAt: 'asc' }
+        });
+        const availableGroup = groups.find(g => g.clickCount < g.maxClicks);
         if (!availableGroup) {
             return {
                 success: false,

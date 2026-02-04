@@ -158,7 +158,7 @@ export default function LearnDashboard() {
                     </div>
                 ) : (
                     <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-12 border border-white/10 text-center">
-                        <p className="text-gray-400 mb-4">You haven't enrolled in any courses yet.</p>
+                        <p className="text-gray-400 mb-4">You haven&apos;t enrolled in any courses yet.</p>
                         <Link
                             href="/courses"
                             className="inline-block px-6 py-3 bg-gradient-to-r from-[#F2419C] to-[#ff6bba] text-white rounded-xl font-medium hover:opacity-90 transition"

@@ -4,6 +4,8 @@ import {
     Post,
     Param,
     UseGuards,
+    Body,
+    Query,
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -37,5 +39,17 @@ export class PaymentsController {
             throw new Error('Invalid tier');
         }
         return this.paymentsService.createTierCheckout(user.id, tier.toUpperCase() as Tier);
+    }
+
+    @Post('initialize-product')
+    async initializeProductPayment(
+        @Body() body: { productId: string; email: string; name: string },
+    ) {
+        return this.paymentsService.initializeProductPayment(body);
+    }
+
+    @Get('verify-flutterwave')
+    async verifyFlutterwave(@Query('transaction_id') transactionId: string, @Query('tx_ref') txRef: string) {
+        return this.paymentsService.verifyFlutterwaveTransaction(transactionId, txRef);
     }
 }

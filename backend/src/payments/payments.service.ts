@@ -1,8 +1,10 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { Tier } from '@prisma/client';
 import Stripe from 'stripe';
+import { FlutterwaveService } from './flutterwave.service';
+import { EmailService } from '../email/email.service';
 
 // Tier pricing configuration (in cents for Stripe)
 const TIER_PRICES: Record<Tier, { amount: number; name: string; description: string }> = {
@@ -26,10 +28,13 @@ const TIER_PRICES: Record<Tier, { amount: number; name: string; description: str
 @Injectable()
 export class PaymentsService {
     private stripe: Stripe;
+    private readonly logger = new Logger(PaymentsService.name);
 
     constructor(
         private readonly config: ConfigService,
         private readonly prisma: PrismaService,
+        private readonly flwService: FlutterwaveService,
+        private readonly emailService: EmailService,
     ) {
         this.stripe = new Stripe(this.config.get<string>('STRIPE_SECRET_KEY') || '', {
             apiVersion: '2023-10-16',
@@ -77,6 +82,82 @@ export class PaymentsService {
         });
 
         return { url: session.url! };
+    }
+
+    async initializeProductPayment(data: { productId: string; email: string; name: string }) {
+        const product = await this.prisma.product.findUnique({ where: { id: data.productId } });
+        if (!product) throw new NotFoundException('Product not found');
+
+        const tx_ref = `p_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        const redirect_url = `${this.config.get('BACKEND_URL')}/payments/verify-flutterwave`; // Verify endpoint
+
+        const response = await this.flwService.initializePayment({
+            amount: Number(product.price),
+            currency: 'USD',
+            email: data.email,
+            customerName: data.name,
+            tx_ref,
+            redirect_url,
+            meta: {
+                productId: product.id,
+                email: data.email,
+                name: data.name,
+            },
+        });
+
+        // MOCK SUCCESS
+        // const response = { status: 'success', data: { link: 'https://flutterwave.com/mock-payment' } };
+
+        if (response.status === 'success') {
+            return { link: response.data.link };
+        } else {
+            throw new BadRequestException('Payment initialization failed');
+        }
+    }
+
+    async verifyFlutterwaveTransaction(transactionId: string, txRef: string) {
+        const response = await this.flwService.verifyTransaction(transactionId);
+
+        // MOCK
+        // const response = { status: 'success', data: { status: 'successful', amount: 99, currency: 'USD', meta: { productId: 'mock', email: 'mock', name: 'mock' } } };
+
+        if (response.status === 'success' && response.data.status === 'successful') {
+            const meta = response.data.meta;
+            const productId = meta.productId;
+            const email = meta.email;
+            const name = meta.name;
+
+            // Record Purchase
+            await this.prisma.purchase.create({
+                data: {
+                    productId,
+                    guestEmail: email,
+                    guestName: name,
+                    amount: response.data.amount,
+                    currency: response.data.currency,
+                    status: 'COMPLETED',
+                    transactionId: String(transactionId),
+                    metadata: response.data,
+                }
+            });
+
+            // Send Email based on product type
+            const product = await this.prisma.product.findUnique({ where: { id: productId } });
+            if (product) {
+                if (product.type === 'MENTORSHIP') {
+                    // Send mentorship booking email with Calendly link
+                    await this.emailService.sendMentorshipBooking(email, name, product.title);
+                } else if (product.type === 'EBOOK' && product.fileUrl) {
+                    // Send e-book delivery email with download link
+                    await this.emailService.sendEbookDelivery(email, name, product.title, product.fileUrl);
+                }
+            }
+
+            // Redirect to Success Page
+            return { url: `${this.config.get('FRONTEND_URL')}/success?status=success&product=${encodeURIComponent(product?.title || '')}` };
+        } else {
+            return { url: `${this.config.get('FRONTEND_URL')}/failed` };
+        }
     }
 
     async getUserTiers(userId: string): Promise<{

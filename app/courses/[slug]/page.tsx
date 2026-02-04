@@ -183,7 +183,7 @@ export default function CourseDetailPage() {
                     {isEnrolled ? (
                         <div className="flex items-center justify-between">
                             <div>
-                                <span className="text-green-600 font-semibold">✓ You're enrolled!</span>
+                                <span className="text-green-600 font-semibold">✓ You&apos;re enrolled!</span>
                                 <p className="text-gray-500 text-sm mt-1">Continue where you left off</p>
                             </div>
                             <Link

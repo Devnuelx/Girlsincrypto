@@ -17,4 +17,14 @@ export declare class PaymentsController {
     createTierCheckout(user: User, tier: string): Promise<{
         url: string;
     }>;
+    initializeProductPayment(body: {
+        productId: string;
+        email: string;
+        name: string;
+    }): Promise<{
+        link: any;
+    }>;
+    verifyFlutterwave(transactionId: string, txRef: string): Promise<{
+        url: string;
+    }>;
 }

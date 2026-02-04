@@ -8,12 +8,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var PaymentsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentsService = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../prisma/prisma.service");
 const stripe_1 = require("stripe");
+const flutterwave_service_1 = require("./flutterwave.service");
+const email_service_1 = require("../email/email.service");
 const TIER_PRICES = {
     HEIRESS: {
         amount: 9900,
@@ -31,10 +34,13 @@ const TIER_PRICES = {
         description: 'Full access to ALL courses on the platform',
     },
 };
-let PaymentsService = class PaymentsService {
-    constructor(config, prisma) {
+let PaymentsService = PaymentsService_1 = class PaymentsService {
+    constructor(config, prisma, flwService, emailService) {
         this.config = config;
         this.prisma = prisma;
+        this.flwService = flwService;
+        this.emailService = emailService;
+        this.logger = new common_1.Logger(PaymentsService_1.name);
         this.stripe = new stripe_1.default(this.config.get('STRIPE_SECRET_KEY') || '', {
             apiVersion: '2023-10-16',
         });
@@ -76,6 +82,66 @@ let PaymentsService = class PaymentsService {
             },
         });
         return { url: session.url };
+    }
+    async initializeProductPayment(data) {
+        const product = await this.prisma.product.findUnique({ where: { id: data.productId } });
+        if (!product)
+            throw new common_1.NotFoundException('Product not found');
+        const tx_ref = `p_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        const redirect_url = `${this.config.get('BACKEND_URL')}/payments/verify-flutterwave`;
+        const response = await this.flwService.initializePayment({
+            amount: Number(product.price),
+            currency: 'USD',
+            email: data.email,
+            customerName: data.name,
+            tx_ref,
+            redirect_url,
+            meta: {
+                productId: product.id,
+                email: data.email,
+                name: data.name,
+            },
+        });
+        if (response.status === 'success') {
+            return { link: response.data.link };
+        }
+        else {
+            throw new common_1.BadRequestException('Payment initialization failed');
+        }
+    }
+    async verifyFlutterwaveTransaction(transactionId, txRef) {
+        const response = await this.flwService.verifyTransaction(transactionId);
+        if (response.status === 'success' && response.data.status === 'successful') {
+            const meta = response.data.meta;
+            const productId = meta.productId;
+            const email = meta.email;
+            const name = meta.name;
+            await this.prisma.purchase.create({
+                data: {
+                    productId,
+                    guestEmail: email,
+                    guestName: name,
+                    amount: response.data.amount,
+                    currency: response.data.currency,
+                    status: 'COMPLETED',
+                    transactionId: String(transactionId),
+                    metadata: response.data,
+                }
+            });
+            const product = await this.prisma.product.findUnique({ where: { id: productId } });
+            if (product) {
+                if (product.type === 'MENTORSHIP') {
+                    await this.emailService.sendMentorshipBooking(email, name, product.title);
+                }
+                else if (product.type === 'EBOOK' && product.fileUrl) {
+                    await this.emailService.sendEbookDelivery(email, name, product.title, product.fileUrl);
+                }
+            }
+            return { url: `${this.config.get('FRONTEND_URL')}/success?status=success&product=${encodeURIComponent(product?.title || '')}` };
+        }
+        else {
+            return { url: `${this.config.get('FRONTEND_URL')}/failed` };
+        }
     }
     async getUserTiers(userId) {
         const purchases = await this.prisma.tierPurchase.findMany({
@@ -146,9 +212,11 @@ let PaymentsService = class PaymentsService {
     }
 };
 exports.PaymentsService = PaymentsService;
-exports.PaymentsService = PaymentsService = __decorate([
+exports.PaymentsService = PaymentsService = PaymentsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [config_1.ConfigService,
-        prisma_service_1.PrismaService])
+        prisma_service_1.PrismaService,
+        flutterwave_service_1.FlutterwaveService,
+        email_service_1.EmailService])
 ], PaymentsService);
 //# sourceMappingURL=payments.service.js.map

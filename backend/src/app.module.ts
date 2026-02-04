@@ -12,6 +12,8 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { TenantModule } from './tenant/tenant.module';
 import { RotatorModule } from './rotator/rotator.module';
 import { LeadsModule } from './leads/leads.module';
+import { ProductsModule } from './products/products.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
     imports: [
@@ -34,6 +36,8 @@ import { LeadsModule } from './leads/leads.module';
         AnalyticsModule,
         RotatorModule,
         LeadsModule,
+        ProductsModule,
+        EmailModule,
     ],
     providers: [
         {

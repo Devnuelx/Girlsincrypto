@@ -1,433 +1,470 @@
-
 'use client';
+
+import { useState } from 'react';
 import Image from 'next/image';
-import Logo from '../public/pink.png';
-import Footer from '../components/Footer';
-import tab from '../public/tab.svg';
-import laptop from '../public/laptop.svg';
-import iphone from '../public/iphone.svg';
-import desktop from '../public/monitor.svg';
 import Navbar from '../components/Navbar';
 import Link from 'next/link';
-import Free from '../public/free-deb.svg';
-import All from '../public/the-girls.svg';
-import Suite from '../public/suite-deb.svg';
-import Student from '../public/students.svg';
-import Liedown from '../public/lie-deb.jpg';
-import Script from 'next/script';
-import Coffe from '../public/coffe-deb.png';
-import { useEffect, useRef, useState } from 'react';
-import Freebie from '../components/Freebie';
 
-const Hero = () => {
-  const [showPopup, setShowPopup] = useState(false);
-  const clickedRef = useRef(false);
-  const observerTargetRef = useRef(null); // Ref for the section after the freebie
+// Placeholder or available assets
+// Mapped from public/ directory scan
+const assets = {
+  heroBg: '/pink.png', // Fallback
+  community1: '/students.svg',
+  community2: '/the-girls.svg',
+  community3: '/women.jpg',
+  founderDeb: '/suit-deb.jpg', // Using available Deb image
+  founderMilana: '/milana.jpg', // Updated Milana image
+};
 
+export default function Home() {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [leadModalOpen, setLeadModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [backendProducts, setBackendProducts] = useState([]);
 
-
-
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-
-  useEffect(() => {
-    const endDate = new Date('2025-08-29T23:59:59'); // adjust as needed
-
-    const updateCountdown = () => {
-      const now = new Date();
-      const diff = endDate - now;
-
-      if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / 1000 / 60) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-
-      setTimeLeft({ days, hours, minutes, seconds });
-    };
-
-    updateCountdown(); // initial call
-    const timer = setInterval(updateCountdown, 1000);
-
-    return () => clearInterval(timer);
+  // Fetch products from backend
+  useState(() => {
+    fetch('http://localhost:3001/api/products')
+      .then(res => res.json())
+      .then(data => setBackendProducts(data))
+      .catch(err => console.error("Failed to fetch products:", err));
   }, []);
 
+  const openModal = (product) => {
+    setSelectedProduct(product);
+    setModalOpen(true);
+  };
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !clickedRef.current) {
-          setTimeout(() => {
-            setShowPopup(true);
-          }, 5000); // Show popup 5 seconds after the target section is in view
-        }
-      },
-      { threshold: 0.5 }
-    );
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedProduct(null);
+  };
 
-    if (observerTargetRef.current) {
-      observer.observe(observerTargetRef.current);
+  const handlePurchase = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    // Find matching backend product
+    const backendProduct = backendProducts.find(p => p.title === selectedProduct.name);
+    // Fallback if not found (or seeding issue) - rely on hardcoded for logic
+    const productId = backendProduct ? backendProduct.id : null;
+
+    if (!productId && selectedProduct.type !== 'mentorship') {
+      alert("Product not available for purchase yet. Please try again later.");
+      setIsSubmitting(false);
+      return;
     }
 
-    return () => {
-      if (observerTargetRef.current) {
-        observer.unobserve(observerTargetRef.current);
-      }
-    };
-  }, []);
+    if (selectedProduct.type === 'mentorship') {
+      window.location.href = 'https://calendly.com/girlsincrypto/onboarding';
+      setIsSubmitting(false);
+      return;
+    }
 
-  const handleFreebieClick = () => {
-    clickedRef.current = true;
+    try {
+      const formData = new FormData(e.target);
+      const email = formData.get('email');
+      const name = formData.get('name');
+
+      const res = await fetch('http://localhost:3001/api/payments/initialize-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, email, name }),
+      });
+
+      if (!res.ok) throw new Error('Payment initialization failed');
+
+      const data = await res.json();
+      window.location.href = data.link; // Redirect to Flutterwave
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong. Please check your connection.");
+      setIsSubmitting(false);
+    }
   };
+
+  const handleLeadCapture = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    const formData = new FormData(e.target);
+    const payload = {
+      tenantSlug: 'gich', // Default tenant
+      name: formData.get('name'),
+      email: formData.get('email'),
+      phone: formData.get('phone'), // WhatsApp
+      source: 'LANDING_PAGE'
+    };
+
+    try {
+      const res = await fetch('http://localhost:3001/api/webhooks/lead-capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || `Server Error ${res.status}`);
+      }
+
+      alert("Success! You're on the list.");
+      setLeadModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert(`Error registering: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const products = [
+    // {
+    //   name: "Crypto Beginners Guide",
+    //   price: 99,
+    //   description: "Master the fundamentals of cryptocurrency from wallet setup to your first trade.",
+    //   features: [
+    //     "Eight comprehensive modules",
+    //     "Wallet setup tutorials",
+    //     "Exchange walkthroughs",
+    //     "Security best practices",
+    //     "Community access"
+    //   ],
+    //   type: "ebook"
+    // },
+    {
+      name: "Crypto Investing Starterpack",
+      price: 99,
+      description: "Your complete guide to starting your crypto investment journey with confidence.",
+      features: [
+        "Step-by-step investment framework",
+        "Risk management strategies",
+        "Portfolio building templates",
+        "Top 20 cryptocurrencies analyzed",
+        "Community access"
+      ],
+      type: "ebook"
+    },
+    // {
+    //   name: "The Memecoin Edge",
+    //   price: 99,
+    //   description: "Navigate the world of memecoins with proven strategies and insider knowledge.",
+    //   features: [
+    //     "Memecoin identification framework",
+    //     "Community analysis techniques",
+    //     "Entry and exit strategies",
+    //     "Risk management for volatile assets",
+    //     "Community access"
+    //   ],
+    //   type: "ebook"
+    // },
+    // {
+    //   name: "Understanding Web3",
+    //   price: 99,
+    //   description: "Comprehensive guide to blockchain technology, the decentralized web, and landing your dream Web3 career.",
+    //   badge: "BONUS: WEB3 CAREER GUIDE INCLUDED",
+    //   features: [
+    //     "Web3 fundamentals explained",
+    //     "Blockchain technology deep dive",
+    //     "Smart contract basics",
+    //     "DeFi ecosystem overview",
+    //     "Career roadmap and job strategies",
+    //     "Resume and portfolio templates",
+    //     "Interview preparation guide",
+    //     "Community access"
+    //   ],
+    //   type: "ebook"
+    // },
+    {
+      name: "One Week Onboarding",
+      price: 599,
+      description: "Personalized 1-on-1 guidance to accelerate your crypto journey.",
+      features: [
+        "Four 1-on-1 sessions over one week",
+        "Personalized learning roadmap",
+        "Direct access via messaging",
+        "Portfolio review and feedback",
+        "Community access"
+      ],
+      type: "mentorship",
+      buttonText: "Onboard Me"
+    }
+  ];
 
   return (
     <>
-      <Script id="ld-org-schema" type="application/ld+json" strategy="afterInteractive">
-        {JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'Organization',
-          'name': 'GirlsinCryptoHub',
-          'alternateName': 'Girls in Crypto',
-          'url': 'https://girlsincryptohub.com',
-          'logo': 'https://girlsincryptohub.com/pink.png',
-          'sameAs': [
-            'https://www.instagram.com/girlsincryptohub?igsh=NXo4aHUza29zNDA%3D&utm_source=qr',
-            'https://x.com/girlscryptohub?s=21',
-          ],
-          'description':
-            'GirlsinCryptoHub is the #1 female crypto community where women learn, earn, and grow in Web3. From bootcamps to real-world income skills, we help you level up in crypto—no tech background needed.',
-        })}
-      </Script>
-
-      <Script id="ld-website-schema" type="application/ld+json" strategy="afterInteractive">
-        {JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'WebSite',
-          'name': 'GirlsinCryptoHub',
-          'url': 'https://girlsincryptohub.com',
-          'potentialAction': {
-            '@type': 'SearchAction',
-            'target': 'https://girlsincryptohub.com/search?q={search_term_string}',
-            'query-input': 'required name=search_term_string',
-          },
-        })}
-      </Script>
-
-      <div className="bg-[#fcfdf2]">
-        <Navbar />
-        <section className="relative bg-[#fcfdf2] font-mono overflow-hidden z-10">
-          <div className="max-w-7xl w-full mx-auto flex flex-col justify-center md:flex-row items-center h-screen relative">
-            {/* Left Side: Images */}
-            <div className="">
-              <div className="w-56 absolute top-[8vh] left-[-10vw] md:w-96 transform md:-rotate-6 -rotate-12">
-                <Image src={laptop} alt="Laptop with women" className="rounded-md" />
-              </div>
-              <div className="w-36 md:w-60 rotate-12 md:rotate-6 absolute right-[-32px] bottom-0 md:right-[-12vw]">
-                <Image src={tab} alt="Phone UI" className="rounded-md" />
-              </div>
-              <div className="w-24 left-[-30px] transform -rotate-6 absolute bottom-0 md:w-32 md:left-0">
-                <Image
-                  src={iphone}
-                  alt="Female founder"
-                  width={128}
-                  height={100}
-                  className="rounded-md"
-                />
-              </div>
-            </div>
-
-            {/* Right Side: Text */}
-            <div className="relative text-center z-20 flex justify-items-center items-center flex-col md:text-center w-full md:w-1/2 space-y-6 md:pt-20">
-              <h1 className="text-3xl md:text-3xl font-semibold text-gray-900 font-space">
-                #1 FEMALE CRYPTO COMMUNITY
-              </h1>
-              <p className="text-gray-700 text-[15px] md:text-base w-6/7 font-space">
-                An exclusive girls only 8 weeks bootcamp where you&apos;ll master crypto
-                investing, understand Web3, and unlock new money opportunities
-                <br />
-                No tech background needed.
-              </p>
-              <a
-                href="/bootcamp" className="inline-block px-8 py-3 bg-[#F2419C] text-white rounded-md text-base font-semibold md:text-x hover:bg-pink-500 transition"
-              >
-                JOIN THE GIRLS →
-              </a>
-
-              <div className="w-8 md:hidden md:w-20 transform rotate-6 absolute top-3 left-20">
-                <Image src={Logo} alt="Creator list" className="rounded-md" />
-              </div>
-            </div>
-            <div className="w-52 md:w-60 transform rotate-20 md:rotate-6 absolute right-[-150px] md:right-[-10vw] top-32">
-              <Image src={desktop} alt="Video intro" className="rounded-md" />
-            </div>
-          </div>
-        </section>
-
-        {/* <section className="bg-[#fff4fa] py-12 px-6 text-center font-space border border-pink-200 rounded-xl w-9/12 mx-auto my-12 shadow-sm">
-        <p className="flex items-center justify-center gap-2 text-red-600 font-bold uppercase text-sm animate-pulse">
-        <span className="w-2 h-2 bg-red-600 rounded-full animate-ping"></span>
-        🔥Live Now: Bootcamp Session in Progress
-        </p>
-          <h2 className="text-3xl md:text-4xl font-bold text-[#3d3d3d] mt-2">
-          We are live!
-          </h2>
-          <p className="text-base text-pink-600 mt-2 font-semibold">
-            Cohort is Live!
-          </p>
-
-          <p className="mt-3 text-gray-700 text-base md:text-lg">
-            Master crypto, start earning, and connect with the most supportive girl gang online.
-            No tech background needed.
-          </p>
-          <Link href="/bootcamp">
-            <button className="mt-6 bg-[#F2419C] text-white px-8 py-3 rounded-full font-semibold hover:bg-pink-500 transition">
-              See What’s Inside →
-            </button>
-          </Link>
-        </section> */}
-
-        {/* Call to Action Section */}
-        <section className="mb-20 md:w-9/12 w-10/12 mx-auto py-30 px-4 flex flex-col md:flex-row items-center justify-center gap-8 mt-32">
-          <div className="text-center h-[350px] md:h-[450px] relative w-full md:w-1/3">
-            <Link href={'/bootcamp'}>
-              <Image
-                src={Liedown}
-                alt="Join Waitlist"
-                className="w-full h-full object-cover object-top shadow-lg grayscale hover:grayscale-0 cursor-pointer"
-              />
-              <h3 className="text-3xl font-bold text-[#3d3d3d] absolute bottom-20 left-0 right-0 mx-auto w-11/12 font-space text-center">
-                Join The <br />
-                <span className="font-play text-4xl text-[#fb2594]">Girls</span>
-              </h3>
-            </Link>
-          </div>
-
-          <div className="text-center h-[350px] md:h-[450px] relative w-full md:w-1/3">
-            <Link href={'/community'}>
-              <Image
-                src={Student}
-                alt="Join Waitlist"
-                className="w-full h-full object-cover shadow-lg grayscale"
-              />
-              <h3 className="text-3xl font-bold text-[#3d3d3d] absolute bottom-20 left-0 right-0 mx-auto w-11/12 font-space text-center">
-                Meet Our <br />
-                <span className="font-play text-4xl text-[#fb2594]">Students</span>
-              </h3>
-            </Link>
-          </div>
-
-          <div
-            ref={observerTargetRef}
-            onClick={handleFreebieClick}
-            className="text-center h-[350px] md:h-[450px] relative w-full md:w-1/3"
-          >
-            <Link href={'/freeclass'}>
-              <Image
-                src={Free}
-                alt="Join Waitlist"
-                className="w-full h-full object-cover object-top shadow-lg grayscale hover:grayscale-0"
-              />
-              <h3 className="text-3xl font-bold text-[#3d3d3d] absolute bottom-20 left-0 right-0 mx-auto w-11/12 font-space text-center">
-                Get The <br />
-                <span className="font-play text-4xl text-[#fb2594]">Freebie</span>
-              </h3>
-            </Link>
-          </div>
-        </section>
-
-        {/* About deb Section */}
-        <section className="font-space md:w-9/12 w-10/12 mx-auto py-16 px-4 flex flex-col md:flex-row items-center justify-center">
-          <div className="md:w-1/3 mb-8 md:mb-0">
-            <Image
-              src={Suite}
-              alt="Pretty deb sitting"
-              className="w-full md:h-[700px] object-cover shadow-lg"
-            />
-          </div>
-          <div className="md:w-8/12 text-center md:text-left md:pl-8">
-            <p className="text-xl text-[#F2419C] italic font-semibold text-left">hey ladies</p>
-            <h2 className="text-3xl md:text-4xl text-black font-bold text-left">
-              It&apos;s Your Crypto Big sis, Deb!
-            </h2>
-            <p className="mt-4 text-gray-700 text-justify">
-              Maybe you found me through one of my trading videos… or a reel on how to invest,
-              or how to earn online while traveling the world. Maybe it was something about
-              working remotely. I am not sure which video brought you here, but I&apos;m glad it
-              did. Because this? This is where the real shift starts
-            </p>
-            <p className="mt-2 text-gray-700 text-justify">
-              I built GirlsinCryptoHub for women like us the ones who want more. More freedom,
-              more income, more clarity, more confidence. And when I asked myself, “What did my
-              younger self really need?
-            </p>
-            <p className="mt-2 text-gray-700 text-justify">
-              the answer was clear. She needed:<br />
-              <br />– A way to learn how money actually works <br />– Real digital skills to start
-              earning <br />– And a space where women weren&apos;t gatekeeping game-changing
-              info <br />
-              So I created it.. a platform, a playbook, and a powerful community. You&apos;ve
-              probably seen glimpses of my life, the soft girl tech era, the travel, the lifestyle
-              but what I&apos;m building goes deeper. It&apos;s about helping more women build real
-              income, create options, and glow up unapologetically.<br />
-              <br />
-              If you&apos;re ready to step into that version of you? Let&apos;s get to work
-            </p>
-            <Link
-              href={
-                'https://www.instagram.com/dcryptgirl?igsh=MWVrcWcycDJ5MGZxcA=='
-              }
-            >
-              <button className="mt-6 bg-transparent border border-[#F2419C] text-[#F2419C] px-6 py-3 rounded-full hover:bg-[#F2419C] cursor-pointer hover:text-white transition">
-                More About Me →
-              </button>
-            </Link>
-          </div>
-        </section>
-
-        <div className="">
-          {/* Testimonial Section */}
-          <section className="w-11/12 md:w-9/12 mx-auto bg-[#4FB1B8] py-20 text-white md:py-40 text-center font-space">
-            <p className="text-base italic">Alice says...</p>
-            <h2 className="text-2xl md:text-5xl font-bold mt-4">
-              &quot;I literally changed my life in a matter of one month.&quot;
-            </h2>
-            <Link href="/community">
-              <button className="mt-6 text-blue-200 underline">Read More Here →</button>
-            </Link>
-          </section>
-
-          {/* Success Stories Section */}
-          <section className=" md:w-9/12 w-11/12 py-16 flex flex-col md:flex-row items-center justify-center mx-auto">
-            <div className="md:w-1/2 mb-8 md:mb-0">
-              <Image
-                src={All}
-                alt="Students on Boat"
-                className="w-full md:w-11/12 rounded-lg shadow-lg"
-              />
-            </div>
-            <div className="md:w-1/2 text-center md:text-left md:pl-8 pt-16">
-              <h2 className="text-3xl md:text-4xl font-space text-black">
-                Discover how 100+ of women like you have become{' '}
-                <span className="italic font-gara">certified crypto badass </span>
-                and changed their lives
-              </h2>
-              <button className="mt-6 bg-transparent border border-[#F2419C] text-[#F2419C] px-6 py-3 rounded-full hover:bg-[#F2419C] hover:text-white transition cursor-pointer">
-                Read Student Stories →
-              </button>
-            </div>
-          </section>
-
-          {/* Waitlist Section */}
-          <section className="py-16 px-4 10/12 md:w-9/12 mx-auto text-center font-space md:bg-[url('/dollar.jpg')] bg-cover bg-center bg-no-repeat bg-opacity-20">
-            <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-lg">
-              <h2 className="text-3xl md:text-4xl font-bold text-black md:py-16 ">
-                Level The F*ck Up!
-              </h2>
-              <p className="mt-4 text-gray-700">
-                If you you want to join the most badass women only crypto training program, get
-                certified and have the support of likeminded women in the corner and create the
-                dream lifestyle you deserve, you are in the right place.
-              </p>
-              <Link href="/bootcamp">
-                <button className="mt-6 bg-[#F2419C] text-white px-6 py-3 rounded-full hover:bg-[#F2419C] transition">
-                  Join The Girls →
-                </button>
-              </Link>
-            </div>
-          </section>
-          {/* Final cta */}
-          {/* <section className="bg-[#fff4fa] py-12 px-6 text-center font-space border border-pink-200 rounded-xl w-9/12 mx-auto my-12 shadow-sm">
-            <p className="uppercase text-sm text-pink-600 font-bold tracking-wider">🔥 Limited-Time Offer</p>
-
-            <h2 className="text-3xl md:text-4xl font-bold text-[#3d3d3d] mt-2">
-              Join the Bootcamp for 
-              <span className="text-[#F2419C]"> $199</span>
-            </h2>
-
-            <p className="text-base text-pink-600 mt-2 font-semibold">
-              Time is ticking babe: {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
-            </p>
-
-            <p className="mt-3 text-gray-700 text-base md:text-lg">
-              Master crypto, start earning, and connect with the most supportive girl gang online.
-              No tech background needed.
-            </p>
-
-            <p className="mt-4 text-gray-700 text-sm md:text-base max-w-3xl mx-auto">
-              This isn&apos;t your average free webinar or fluffy course. This is 8 weeks of real crypto education, 
-              Web3 tools, and money making strategy designed specifically for women. 
-              If we were pricing it based on value (and girl, we should), this would easily be worth over <strong>$500</strong>.
-              But right now? You&apos;re getting access for <strong>$199</strong> because we&apos;re all about breaking barriers, not wallets.
-            </p>
-
-            <Link href="/bootcamp">
-              <button className="mt-6 bg-[#F2419C] text-white px-8 py-3 rounded-full font-semibold hover:bg-pink-500 transition">
-                See What&apos;s Inside →
-              </button>
-            </Link>
-          </section> */}
-
-
-          <section className="bg-[#fff4fa] py-12 px-6 text-center font-space border border-pink-200 rounded-xl w-9/12 mx-auto my-12 shadow-sm">
-            <p className="uppercase text-sm text-pink-600 font-bold tracking-wider">🔥 Limited-Time Offer</p>
-
-            <h2 className="text-3xl md:text-4xl font-bold text-[#3d3d3d] mt-2">
-              We are Live!
-            </h2>
-
-            <p className="mt-3 text-gray-700 text-base md:text-lg">
-              Master crypto, start earning, and connect with the most supportive girl gang online.
-              No tech background needed.
-            </p>
-
-            <Link href="/bootcamp">
-              <button className="mt-6 bg-[#F2419C] text-white px-8 py-3 rounded-full font-semibold hover:bg-pink-500 transition">
-                See What&apos;s Inside →
-              </button>
-            </Link>
-          </section>
-
-
-
-          <section className="md:w-9/12 w-11/12 mx-auto bg-[#e8d2ca] md:h-[100vh] flex items-center justify-center py-8 mt-16">
-            <div className="bg-[#eee9e7] w-11/12 md:w-10/12 mx-auto flex flex-col md:flex-row items-center justify-center px-4 font-space md:py-16">
-              <div className="mb-8 md:mb-0">
-                <div className="relative">
-                  <Image
-                    src={Coffe}
-                    alt="Guide Mockup"
-                    className="w-8/12 md:w-[100%] shadow-lg mx-auto"
-                  />
-                </div>
-              </div>
-              <div className="md:w-3/4 text-center md:text-left md:pl-20">
-                <p className="uppercase text-sm text-pink-500">Guide for Women</p>
-                <h1 className="text-4xl md:text-5xl font-bold leading-tight text-black">
-                  The Hot Girl <br /> Crypto Mindset
-                </h1>
-                <p className="mt-4 text-gray-700 font-space pb-10">
-                  Unlock dcryptgirl&apos;s Hot Girl Crypto Mindset guide and discover exactly what
-                  it takes to build the confidence, clarity, and consistency to start making real
-                  money in crypto. Whether you&apos;re trading, flipping, or building, this is your
-                  blueprint to level up and thrive in Web3.
-                </p>
-                <Link href={'/Debs-Crypto-Investing-Starter-Pack.pdf'}>
-                  <button className="mt-6 border mb-10 bg-[#F2419C] border-[#F2419C] text-white px-6 py-3 rounded-full hover:bg-transparent hover:text-[#F2419C] transition">
-                    Get Your Guide →
-                  </button>
-                </Link>
-              </div>
-            </div>
-          </section>
-        </div>
-        <Footer />
+      <div className="animated-bg">
+        <div className="floating-shape shape-1"></div>
+        <div className="floating-shape shape-2"></div>
       </div>
-      <Freebie show={showPopup} setShow={setShowPopup} />
+      <div className="grain"></div>
+      <div className="floating-particles" id="floatingParticles"></div>
+
+      <Navbar />
+
+      {/* Hero Section */}
+      <section className="hero" id="home">
+        <div className="hero-content">
+          <p className="hero-label">FOR WOMEN BUILDING WEALTH</p>
+          <h1><em>Your Crypto</em><br />Journey Starts<br />Here</h1>
+          <p className="hero-subtitle">
+            Master crypto investing, DeFi, memecoin trading, and Web3 careers. Built by women, uninterrupted by the crypto bro culture.
+          </p>
+          <div className="flex justify-center gap-6 flex-wrap">
+            <a href="#products" className="cta-button">Join the Hub</a>
+            <a href="#free-class" className="inline-block px-12 py-5 border-2 border-[var(--pink)] text-[var(--cream)] rounded-full font-bold text-sm tracking-wide transition-all duration-400 hover:bg-[var(--pink)] hover:text-white hover:-translate-y-1 opacity-0 animate-[fadeInUp_0.8s_ease-out_1s_forwards]">
+              Start with Free Class →
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Free Class Section */}
+      <section className="free-class-cta" id="free-class">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(242,65,156,0.1)_0%,transparent_70%)] pointer-events-none"></div>
+        <div className="max-w-[1000px] mx-auto text-center relative z-10">
+          <div className="inline-block px-6 py-2 bg-gradient-to-br from-[#FFD700] to-[#FFA500] text-white rounded-full text-xs font-bold uppercase tracking-[1.5px] mb-8 shadow-[0_4px_20px_rgba(255,215,0,0.4)]">
+            🎁 Free Masterclass
+          </div>
+          <h2 className="text-[clamp(3rem,6vw,5.5rem)] font-bold mb-6 tracking-[-0.01em] leading-[1.1] font-playfair">
+            Master Crypto <em className="italic text-[var(--pink)]">Fundamentals</em><br />in One Hour
+          </h2>
+          <p className="text-xl opacity-75 mb-12 leading-relaxed max-w-[700px] mx-auto">
+            Join thousands of women who started their crypto journey with us. Learn wallet setup, exchange basics, and top strategies. No experience needed.
+          </p>
+          <button onClick={() => setLeadModalOpen(true)} className="free-class-btn inline-block px-14 py-6 bg-gradient-to-br from-[var(--pink)] to-[var(--pink-dark)] text-white no-underline rounded-full font-bold text-base tracking-[0.5px] transition-all shadow-[0_10px_40px_rgba(242,65,156,0.4)] relative overflow-hidden hover:-translate-y-1 hover:shadow-[0_15px_50px_rgba(242,65,156,0.5)] cursor-pointer border-none">
+            Reserve Your Spot — It&apos;s Free
+          </button>
+          <p className="mt-8 text-sm opacity-50 tracking-wider">✓ Live Q&A Session • ✓ Beginner-Friendly • ✓ Limited Spots</p>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="stats">
+        <div className="stats-grid">
+          <div className="stat-item">
+            <div className="stat-number">5,000+</div>
+            <div className="stat-label">Women Empowered</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-number">98%</div>
+            <div className="stat-label">Success Rate</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-number">10+</div>
+            <div className="stat-label">Countries</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-number">24/7</div>
+            <div className="stat-label">Support</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Quote Section */}
+      <section className="quote-section">
+        <blockquote>&quot;The system that makes you money in crypto.&quot;</blockquote>
+        <cite>— DEB, FOUNDER</cite>
+      </section>
+
+      {/* Video Section */}
+      <section className="video-section" id="video">
+        <div className="video-content">
+          <p className="section-label">WATCH NOW</p>
+          <h2>This Is <em>For You</em></h2>
+          <p>Watch how we&apos;re transforming women&apos;s lives through crypto education</p>
+          <div className="video-container">
+            <div className="video-placeholder">
+              <div className="video-placeholder-icon">▶</div>
+              <div className="text-lg">Your video goes here</div>
+              <div className="text-sm opacity-50">Replace with your video embed code</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Products Section */}
+      <section className="products" id="products">
+        <div className="products-header">
+          <p className="section-label">OUR PROGRAMS</p>
+          <h2><em>Start Here</em></h2>
+          <p>CURATED FOR BUILDING REAL WEALTH</p>
+        </div>
+
+        <div className="products-grid">
+          {products.map((product, index) => (
+            <div key={index} className="product-card">
+              {product.badge && <span className="badge">{product.badge}</span>}
+              <h3>{product.name}</h3>
+              <p className="product-description">{product.description}</p>
+              <ul className="product-features">
+                {product.features.map((feature, idx) => (
+                  <li key={idx}>{feature}</li>
+                ))}
+              </ul>
+              <div className="price">${product.price}</div>
+              <button
+                className="buy-button"
+                onClick={() => openModal(product)}
+              >
+                {product.buttonText || "Get Access"}
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Interactive / Why Us Section */}
+      <section className="interactive-section">
+        <div className="text-center mb-12 relative z-10">
+          <p className="section-label text-white">WHY US</p>
+          <h2 className="font-playfair text-[clamp(3rem,6vw,5rem)] font-bold mb-4 text-white tracking-[-0.01em]"><em>Why girlsincrypto?</em></h2>
+          <p className="text-lg opacity-90 text-white">We simplify crypto and Web3</p>
+        </div>
+        <div className="interactive-grid">
+          <div className="interactive-card">
+            <h3>Overwhelmed by jargon?</h3>
+            <p>We break down complex crypto concepts into simple, actionable strategies anyone can understand.</p>
+          </div>
+          <div className="interactive-card">
+            <h3>Not sure where to invest?</h3>
+            <p>Get clear frameworks for portfolio building, risk management, and identifying opportunities.</p>
+          </div>
+          <div className="interactive-card">
+            <h3>Want to transition to Web3?</h3>
+            <p>Learn exactly how to position yourself for Web3 careers and build a standout portfolio.</p>
+          </div>
+          <div className="interactive-card">
+            <h3>Need community support?</h3>
+            <p>Join thousands of women supporting each other on their journey to financial freedom.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Community Section */}
+      <section className="community" id="community">
+        <div className="community-header">
+          <p className="section-label">OUR TRIBE</p>
+          <h2>Join the <em>Community</em></h2>
+          <p>Connect with thousands of women building wealth and careers in Web3</p>
+        </div>
+        <div className="community-images">
+          <div className="community-image relative h-[500px]">
+            <Image src={assets.community1} alt="Community 1" fill className="object-cover" />
+          </div>
+          <div className="community-image relative h-[500px]">
+            <Image src={assets.community2} alt="Community 2" fill className="object-cover" />
+          </div>
+          <div className="community-image relative h-[500px]">
+            <Image src={assets.community3} alt="Community 3" fill className="object-cover" />
+          </div>
+        </div>
+      </section>
+
+      {/* Founders Section */}
+      <section className="founders">
+        <div className="founders-header">
+          <p className="section-label">LEADERSHIP</p>
+          <h2>Meet the Founders</h2>
+        </div>
+        <div className="founders-grid">
+          <div className="founder-card">
+            <div className="founder-image relative">
+              <Image src={assets.founderDeb} alt="Deb" fill className="object-cover" />
+            </div>
+            <h3 className="founder-name">Deb</h3>
+            <p className="founder-title">Co-Founder</p>
+            <p className="founder-instagram">@debifegwu</p>
+            <p className="founder-bio">
+              Crypto investor and educator on a mission to empower women in crypto. Five years building wealth in cryptocurrency markets.
+            </p>
+          </div>
+          <div className="founder-card">
+            <div className="founder-image relative">
+              <Image src={assets.founderMilana} alt="Milana" fill className="object-cover" />
+            </div>
+            <h3 className="founder-name">Milana</h3>
+            <p className="founder-title">Co-Founder</p>
+            <p className="founder-instagram">@milana_tashmetova</p>
+            <p className="founder-bio">
+              Web3 strategist and community builder dedicated to creating inclusive spaces for women in crypto and blockchain technology.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section className="about" id="about">
+        <div className="about-content">
+          <h2>About Us</h2>
+          <p>We started girlsincrypto because we saw too many talented women sitting on the sidelines of the Web3 revolution. Too intimidated. Too confused. Too discouraged by the crypto bro culture.</p>
+          <p>We&apos;ve been where you are. We know what it feels like to be overwhelmed by technical jargon, to second-guess every investment decision, to wonder if you belong in this space.</p>
+          <p><strong>Here&apos;s the truth: you do belong. And we&apos;re here to prove it.</strong></p>
+          <p>Every guide, every resource, every piece of content we create is designed with one goal: to give you the confidence, knowledge, and community you need to build real wealth in crypto and Web3.</p>
+          <p><strong>Because when women win in crypto, we all win.</strong></p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer>
+        <p>&copy; 2026 girlsincrypto. Empowering women in crypto.</p>
+        <p className="mt-4"><a href="mailto:contact@girlsincrypto.com" className="opacity-50 hover:opacity-100 transition">contact@girlsincrypto.com</a></p>
+      </footer>
+
+      {/* Modal */}
+      <div className={`modal ${modalOpen ? 'active' : ''}`} onClick={(e) => e.target.classList.contains('modal') && closeModal()}>
+        <div className="modal-content relative">
+          <button className="close-modal text-black" onClick={closeModal}>&times;</button>
+          {selectedProduct && (
+            <>
+              <h2>{selectedProduct.name}</h2>
+              <div className="modal-price">${selectedProduct.price}</div>
+              <form onSubmit={handlePurchase}>
+                <div className="form-group">
+                  <label htmlFor="email">Email</label>
+                  <input type="email" id="email" required placeholder="your@email.com" />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="name">Name</label>
+                  <input type="text" id="name" required placeholder="Jane Doe" />
+                </div>
+                <button type="submit" className="submit-button" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <span className="spinner"></span>
+                  ) : (
+                    "Complete Purchase"
+                  )}
+                </button>
+              </form>
+            </>
+          )}
+        </div>
+      </div>
+      {/* Lead Capture Modal */}
+      <div className={`modal ${leadModalOpen ? 'active' : ''}`} onClick={(e) => e.target.classList.contains('modal') && setLeadModalOpen(false)}>
+        <div className="modal-content relative">
+          <button className="close-modal text-black" onClick={() => setLeadModalOpen(false)}>&times;</button>
+          <h2>Join the Masterclass</h2>
+          <p className="mb-4 text-center opacity-70">Enter your details to get the free link.</p>
+          <form onSubmit={handleLeadCapture}>
+            <div className="form-group">
+              <label>Name</label>
+              <input name="name" type="text" required placeholder="Your Name" />
+            </div>
+            <div className="form-group">
+              <label>Email</label>
+              <input name="email" type="email" required placeholder="your@email.com" />
+            </div>
+            <div className="form-group">
+              <label>WhatsApp (Optional)</label>
+              <input name="phone" type="tel" placeholder="+1234567890" />
+            </div>
+            <button type="submit" className="submit-button" disabled={isSubmitting}>
+              {isSubmitting ? <span className="spinner"></span> : "Register Free"}
+            </button>
+          </form>
+        </div>
+      </div >
     </>
   );
-};
-
-export default Hero;
+}

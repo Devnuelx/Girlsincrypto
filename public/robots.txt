@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://girlsincryptohub.com
+
+# Sitemaps
+Sitemap: https://girlsincryptohub.com/sitemap.xml

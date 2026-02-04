@@ -34,6 +34,12 @@ let PaymentsController = class PaymentsController {
         }
         return this.paymentsService.createTierCheckout(user.id, tier.toUpperCase());
     }
+    async initializeProductPayment(body) {
+        return this.paymentsService.initializeProductPayment(body);
+    }
+    async verifyFlutterwave(transactionId, txRef) {
+        return this.paymentsService.verifyFlutterwaveTransaction(transactionId, txRef);
+    }
 };
 exports.PaymentsController = PaymentsController;
 __decorate([
@@ -59,6 +65,21 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], PaymentsController.prototype, "createTierCheckout", null);
+__decorate([
+    (0, common_1.Post)('initialize-product'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], PaymentsController.prototype, "initializeProductPayment", null);
+__decorate([
+    (0, common_1.Get)('verify-flutterwave'),
+    __param(0, (0, common_1.Query)('transaction_id')),
+    __param(1, (0, common_1.Query)('tx_ref')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], PaymentsController.prototype, "verifyFlutterwave", null);
 exports.PaymentsController = PaymentsController = __decorate([
     (0, common_1.Controller)('payments'),
     __metadata("design:paramtypes", [payments_service_1.PaymentsService])

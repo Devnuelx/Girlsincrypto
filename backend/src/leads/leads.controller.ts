@@ -22,6 +22,7 @@ export class LeadsController {
     @HttpCode(HttpStatus.OK)
     @Throttle({ default: { limit: 20, ttl: 60000 } })
     async captureLead(@Body() dto: LeadCaptureDto) {
+        console.log('Received Lead Capture Request:', JSON.stringify(dto));
         return this.leadsService.captureLead(dto);
     }
 }

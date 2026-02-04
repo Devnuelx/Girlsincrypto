@@ -21,6 +21,8 @@ const analytics_module_1 = require("./analytics/analytics.module");
 const tenant_module_1 = require("./tenant/tenant.module");
 const rotator_module_1 = require("./rotator/rotator.module");
 const leads_module_1 = require("./leads/leads.module");
+const products_module_1 = require("./products/products.module");
+const email_module_1 = require("./email/email.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -45,6 +47,8 @@ exports.AppModule = AppModule = __decorate([
             analytics_module_1.AnalyticsModule,
             rotator_module_1.RotatorModule,
             leads_module_1.LeadsModule,
+            products_module_1.ProductsModule,
+            email_module_1.EmailModule,
         ],
         providers: [
             {

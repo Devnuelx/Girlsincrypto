@@ -2,7 +2,10 @@ import { Module } from '@nestjs/common';
 import { LeadsService } from './leads.service';
 import { LeadsController } from './leads.controller';
 
+import { TenantModule } from '../tenant/tenant.module';
+
 @Module({
+    imports: [TenantModule],
     controllers: [LeadsController],
     providers: [LeadsService],
     exports: [LeadsService],

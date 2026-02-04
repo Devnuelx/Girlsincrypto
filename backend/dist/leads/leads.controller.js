@@ -21,6 +21,7 @@ let LeadsController = class LeadsController {
         this.leadsService = leadsService;
     }
     async captureLead(dto) {
+        console.log('Received Lead Capture Request:', JSON.stringify(dto));
         return this.leadsService.captureLead(dto);
     }
 };

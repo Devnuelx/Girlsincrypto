@@ -28,18 +28,20 @@ export class RotatorService {
         // 1. Resolve tenant
         const tenant = await this.tenantService.findBySlug(tenantSlug);
 
-        // 2. Find first available group using raw SQL (sequential order by createdAt)
-        // WHERE isActive = true AND clickCount < maxClicks ORDER BY createdAt ASC
-        const groups = await this.prisma.$queryRaw<WhatsappGroup[]>`
-      SELECT * FROM whatsapp_groups 
-      WHERE "tenantId" = ${tenant.id}
-        AND "isActive" = true 
-        AND "clickCount" < "maxClicks"
-      ORDER BY "createdAt" ASC
-      LIMIT 1
-    `;
+        // 2. Find first available group (sequential order by createdAt)
+        // MongoDB-compatible query using Prisma
+        // We need to find groups where clickCount < maxClicks
+        // Since we can't directly compare two fields in Prisma, we'll fetch and filter
+        const groups = await this.prisma.whatsappGroup.findMany({
+            where: {
+                tenantId: tenant.id,
+                isActive: true,
+            },
+            orderBy: { createdAt: 'asc' }
+        });
 
-        const availableGroup = groups[0];
+        // Filter to find first group with available slots
+        const availableGroup = groups.find(g => g.clickCount < g.maxClicks);
 
         // 3. No group available → waiting room
         if (!availableGroup) {

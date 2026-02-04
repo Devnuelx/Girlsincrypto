@@ -1,37 +1,31 @@
-import { EB_Garamond, Geist, Geist_Mono, Playwrite_IN, Space_Grotesk } from "next/font/google";
+import { DM_Sans, Playfair_Display, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import Script from "next/script";
 import Providers from "./providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const playfairDisplay = Playfair_Display({
+  variable: "--font-playfair",
   subsets: ["latin"],
+  style: ["normal", "italic"],
 });
 
-const playwright = Playwrite_IN({
-  variable: "--font-playwrite",
+const cormorantGaramond = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
-})
-
-const Gara = EB_Garamond({
-  variable: "--font-garamond",
-  subsets: ["latin"],
-});
-
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
 });
 
 export const metadata = {
-  title: "GirlsinCryptoHub | Empowering Women in Web3",
-  description: "Join the leading community where women learn how to make money in crypto, share strategies, and support each other girl-to-girl.",
+  title: "girlsincrypto — Master Digital Wealth",
+  description: "The ultimate digital guides to mastering crypto investing, DeFi, and Web3.",
   keywords: [
     "Crypto for women",
     "Girls in crypto",
@@ -47,8 +41,8 @@ export const metadata = {
   metadataBase: new URL("https://girlsincryptohub.com"),
 
   openGraph: {
-    title: "GirlsinCryptoHub | Empowering Women in Web3",
-    description: "Discover how women are making money in crypto. From beginners to pros, join a supportive and powerful female-led crypto community.",
+    title: "girlsincrypto — Master Digital Wealth",
+    description: "The ultimate digital guides to mastering crypto investing, DeFi, and Web3.",
     url: "https://girlsincryptohub.com",
     siteName: "GirlsinCryptoHub",
     locale: "en_US",
@@ -65,7 +59,7 @@ export const metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "GirlsinCryptoHub | Empowering Women in Web3",
+    title: "girlsincrypto — Master Digital Wealth",
     description: "A crypto space built by women, for women to Learn, grow, and earn.",
     creator: "@girlsincryptohub",
     images: ["/pink.png"],
@@ -99,7 +93,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} ${playwright.variable}  ${Gara.variable} antialiased`}
+        className={`${dmSans.variable} ${playfairDisplay.variable} ${cormorantGaramond.variable} antialiased`}
       >
         <Providers>
           <Toaster position="top-right" />

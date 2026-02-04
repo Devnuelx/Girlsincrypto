@@ -2,14 +2,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string)
+// Initialize Stripe only if API key is available
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
+  : null;
 
 
 // const MY_DOMAIN = NEXT_PUBLIC_SITE_URL!;
 
 export async function POST(req: NextRequest) {
+  if (!stripe) {
+    return new NextResponse("Stripe not configured", { status: 500 });
+  }
+
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
