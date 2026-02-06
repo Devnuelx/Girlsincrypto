@@ -57,7 +57,7 @@ const Footer = () => {
             target="_blank"
             className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-pink-600 hover:text-white transition"
           >
-            <Image src={Tiktok} className="w-6 h-6" height={''} width={""} alt="Tiktok Icon"/>
+            <Image src={Tiktok} className="w-6 h-6" height={24} width={24} alt="Tiktok Icon"/>
           </Link>
         </div>
       </div>

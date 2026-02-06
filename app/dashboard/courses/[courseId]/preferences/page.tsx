@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { enrollmentsApi } from '../../../../../lib/api';
@@ -27,11 +27,7 @@ export default function EditPreferencesPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
 
-    useEffect(() => {
-        loadEnrollment();
-    }, [courseId]);
-
-    const loadEnrollment = async () => {
+    const loadEnrollment = useCallback(async () => {
         try {
             const data = await enrollmentsApi.getMyForCourse(courseId);
             if (data) {
@@ -44,7 +40,11 @@ export default function EditPreferencesPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [courseId]);
+
+    useEffect(() => {
+        loadEnrollment();
+    }, [loadEnrollment]);
 
     const toggleDay = (day: string) => {
         setSelectedDays((prev) =>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -28,11 +28,7 @@ export default function MyCoursesPage() {
     const [allCourses, setAllCourses] = useState<Course[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
             const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -55,7 +51,11 @@ export default function MyCoursesPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [isAdmin]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     if (isLoading) {
         return (

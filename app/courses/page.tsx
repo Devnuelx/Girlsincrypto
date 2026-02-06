@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { coursesApi, paymentsApi } from '../../lib/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -31,11 +31,7 @@ export default function CoursesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadData();
-    }, [isAuthenticated]);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             const coursesData = await coursesApi.getAll(true);
             setCourses(coursesData);
@@ -49,7 +45,11 @@ export default function CoursesPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [isAuthenticated]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     const hasAccess = (tier: string) => userTiers.includes(tier);
 

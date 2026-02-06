@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { coursesApi, enrollmentsApi, paymentsApi } from '../../../lib/api';
@@ -63,11 +63,7 @@ export default function CourseDetailPage() {
     const [selectedDays, setSelectedDays] = useState<string[]>(['MON', 'WED', 'FRI']);
     const [enrolling, setEnrolling] = useState(false);
 
-    useEffect(() => {
-        loadData();
-    }, [slug, isAuthenticated]);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             const courseData = await coursesApi.getBySlug(slug);
             setCourse(courseData);
@@ -85,7 +81,11 @@ export default function CourseDetailPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [slug, isAuthenticated]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     const hasAccess = course ? userTiers.includes(course.tier) : false;
 

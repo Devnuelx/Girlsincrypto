@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -42,11 +42,7 @@ export default function CoursePlayerPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
 
-  useEffect(() => {
-    loadCourse();
-  }, [courseId]);
-
-  const loadCourse = async () => {
+  const loadCourse = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -77,7 +73,11 @@ export default function CoursePlayerPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [courseId, isAdmin]);
+
+  useEffect(() => {
+    loadCourse();
+  }, [loadCourse]);
 
   const toggleModule = (moduleId: string) => {
     const newExpanded = new Set(expandedModules);

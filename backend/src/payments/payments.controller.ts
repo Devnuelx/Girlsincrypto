@@ -6,7 +6,10 @@ import {
     UseGuards,
     Body,
     Query,
+    Res,
+    BadRequestException,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { PaymentsService } from './payments.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -36,7 +39,7 @@ export class PaymentsController {
         // Validate tier
         const validTiers: Tier[] = ['HEIRESS', 'EMPRESS', 'SOVEREIGN'];
         if (!validTiers.includes(tier.toUpperCase() as Tier)) {
-            throw new Error('Invalid tier');
+            throw new BadRequestException('Invalid tier');
         }
         return this.paymentsService.createTierCheckout(user.id, tier.toUpperCase() as Tier);
     }
@@ -49,7 +52,12 @@ export class PaymentsController {
     }
 
     @Get('verify-flutterwave')
-    async verifyFlutterwave(@Query('transaction_id') transactionId: string, @Query('tx_ref') txRef: string) {
-        return this.paymentsService.verifyFlutterwaveTransaction(transactionId, txRef);
+    async verifyFlutterwave(
+        @Query('transaction_id') transactionId: string,
+        @Query('tx_ref') txRef: string,
+        @Res() res: Response,
+    ) {
+        const result = await this.paymentsService.verifyFlutterwaveTransaction(transactionId, txRef);
+        return res.redirect(result.url);
     }
 }

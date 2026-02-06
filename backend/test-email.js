@@ -1,47 +1,49 @@
-const nodemailer = require('nodemailer');
-require('dotenv').config();
+/**
+ * Test SMTP configuration with multiple Zoho endpoints
+ * Uses SMTP credentials from .env file
+ * Run with: node test-email.js
+ */
 
-// Zoho Mail SMTP configurations
+require('dotenv').config();
+const nodemailer = require('nodemailer');
+
+const user = process.env.SMTP_USER;
+const pass = process.env.SMTP_PASS;
+
+if (!user || !pass) {
+    console.error('❌ SMTP_USER and SMTP_PASS must be set in .env');
+    process.exit(1);
+}
+
+// Zoho Mail SMTP configurations to test
 const configs = [
     {
         name: 'Zoho: smtp.zoho.com Port 465 SSL',
         host: 'smtp.zoho.com',
         port: 465,
         secure: true,
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-        },
+        auth: { user, pass },
     },
     {
         name: 'Zoho: smtp.zoho.com Port 587 TLS',
         host: 'smtp.zoho.com',
         port: 587,
         secure: false,
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-        },
+        auth: { user, pass },
     },
     {
         name: 'Zoho EU: smtp.zoho.eu Port 465 SSL',
         host: 'smtp.zoho.eu',
         port: 465,
         secure: true,
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-        },
+        auth: { user, pass },
     },
     {
         name: 'Zoho IN: smtppro.zoho.in Port 465 SSL',
         host: 'smtppro.zoho.in',
         port: 465,
         secure: true,
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-        },
+        auth: { user, pass },
     },
 ];
 
@@ -55,7 +57,7 @@ async function testConfig(config) {
     try {
         await transporter.verify();
         console.log('✅ SUCCESS! This config works!');
-        return { success: true, config };
+        return { success: true, config: { ...config, auth: { user: config.auth.user, pass: '***HIDDEN***' } } };
     } catch (error) {
         console.log(`❌ Failed: ${error.message}`);
         return { success: false };
@@ -63,7 +65,8 @@ async function testConfig(config) {
 }
 
 async function main() {
-    console.log('Testing Hostinger SMTP configurations...');
+    console.log('Testing Zoho SMTP configurations...');
+    console.log(`User: ${user}`);
 
     for (const config of configs) {
         const result = await testConfig(config);
@@ -75,10 +78,10 @@ async function main() {
     }
 
     console.log('\n❌ All configurations failed.');
-    console.log('\nPlease check in Hostinger hPanel:');
-    console.log('1. Go to Emails → Email Accounts → Click on your email');
-    console.log('2. Look for "Configuration" or "Email Client Settings"');
-    console.log('3. Note the exact SMTP server, port, and if SSL/TLS is required');
+    console.log('\nPlease check:');
+    console.log('1. SMTP_USER and SMTP_PASS are correct in .env');
+    console.log('2. Your Zoho account has SMTP access enabled');
+    console.log('3. You may need to generate an App Password in Zoho');
 }
 
 main();

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { coursesApi, modulesApi, lessonsApi } from '../../../../lib/api';
@@ -51,11 +51,7 @@ export default function CourseEditorPage() {
     const [moduleTitle, setModuleTitle] = useState('');
     const [lessonData, setLessonData] = useState({ title: '', contentUrl: '', contentType: 'VIDEO' });
 
-    useEffect(() => {
-        loadCourse();
-    }, [courseId]);
-
-    const loadCourse = async () => {
+    const loadCourse = useCallback(async () => {
         try {
             const data = await coursesApi.getById(courseId);
             setCourse(data);
@@ -67,7 +63,11 @@ export default function CourseEditorPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [courseId, activeModule]);
+
+    useEffect(() => {
+        loadCourse();
+    }, [loadCourse]);
 
     const handleAddModule = async (e: React.FormEvent) => {
         e.preventDefault();

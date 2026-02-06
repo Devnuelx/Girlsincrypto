@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { usersApi } from '../../../lib/api';
 
 interface User {
@@ -20,11 +20,7 @@ export default function AdminUsersPage() {
     const [page, setPage] = useState(0);
     const pageSize = 20;
 
-    useEffect(() => {
-        loadUsers();
-    }, [page]);
-
-    const loadUsers = async () => {
+    const loadUsers = useCallback(async () => {
         try {
             const data = await usersApi.getAll(page * pageSize, pageSize);
             setUsers(data.users);
@@ -34,7 +30,11 @@ export default function AdminUsersPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [page]);
+
+    useEffect(() => {
+        loadUsers();
+    }, [loadUsers]);
 
     const handleToggleActive = async (userId: string, currentActive: boolean) => {
         try {

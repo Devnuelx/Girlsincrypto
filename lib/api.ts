@@ -161,7 +161,7 @@ export const paymentsApi = {
     }>('/payments/my-tiers'),
 
     createTierCheckout: (tier: string) =>
-        apiRequest<{ url: string }>(`/payments/checkout/${tier}`, { method: 'POST' }),
+        apiRequest<{ link: string }>(`/payments/checkout/${tier}`, { method: 'POST' }),
 };
 
 // Analytics API (Admin)

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { enrollmentsApi } from '../../../../lib/api';
@@ -56,11 +56,7 @@ export default function StudentCoursePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [activeLesson, setActiveLesson] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadEnrollment();
-    }, [courseId]);
-
-    const loadEnrollment = async () => {
+    const loadEnrollment = useCallback(async () => {
         try {
             const data = await enrollmentsApi.getMyForCourse(courseId);
             setEnrollment(data);
@@ -69,7 +65,11 @@ export default function StudentCoursePage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [courseId]);
+
+    useEffect(() => {
+        loadEnrollment();
+    }, [loadEnrollment]);
 
     const isLessonAccessible = (lessonId: string) => {
         return enrollment?.accessInfo?.accessibleLessonIds?.includes(lessonId) || false;

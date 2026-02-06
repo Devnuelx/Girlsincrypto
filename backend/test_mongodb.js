@@ -1,13 +1,17 @@
+/**
+ * Test MongoDB connection
+ * Uses DATABASE_URL from .env file
+ * Run with: node test_mongodb.js
+ */
+
+require('dotenv').config();
 const { MongoClient } = require('mongodb');
 
-// Test MongoDB connection
 async function testConnection() {
-    // Using environment variable for connection
-    require('dotenv').config();
-    const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
+    const uri = process.env.DATABASE_URL;
 
     if (!uri) {
-        console.error('❌ MONGODB_URI or MONGO_URI not found in environment variables');
+        console.error('❌ DATABASE_URL is not set in .env file');
         process.exit(1);
     }
 
@@ -19,10 +23,12 @@ async function testConnection() {
         await client.connect();
         console.log('✅ Successfully connected to MongoDB!');
 
-        const db = client.db('gich_test');
+        // Parse database name from URI
+        const dbName = uri.split('/').pop().split('?')[0] || 'gich';
+        const db = client.db(dbName);
         const collections = await db.listCollections().toArray();
 
-        console.log(`\n📊 Database: gich_test`);
+        console.log(`\n📊 Database: ${dbName}`);
         console.log(`📁 Collections: ${collections.length}`);
 
         if (collections.length > 0) {
@@ -35,7 +41,7 @@ async function testConnection() {
         await testCollection.insertOne({
             test: true,
             timestamp: new Date(),
-            message: 'MongoDB migration test successful'
+            message: 'MongoDB connection test successful'
         });
         console.log('\n✅ Write test successful');
 

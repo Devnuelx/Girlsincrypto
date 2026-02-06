@@ -159,6 +159,71 @@ export class EmailService {
     }
 
     /**
+     * Send tier purchase confirmation email
+     */
+    async sendTierPurchaseConfirmation(email: string, customerName: string, tierName: string, amount: number) {
+        try {
+            await this.transporter.sendMail({
+                from: this.fromEmail,
+                to: email,
+                subject: `Welcome to ${tierName}! Your Purchase is Confirmed`,
+                html: `
+                    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #faf9f6;">
+                        <div style="background: linear-gradient(135deg, #F2419C 0%, #ff6bba 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to ${tierName}!</h1>
+                            <p style="color: rgba(255,255,255,0.9); margin-top: 10px; font-size: 16px;">Your crypto journey just leveled up</p>
+                        </div>
+
+                        <div style="padding: 40px 30px; background: white;">
+                            <p style="font-size: 16px; color: #333;">Hey ${customerName},</p>
+
+                            <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                                Congratulations on joining the <strong>${tierName}</strong>!
+                                Your payment of <strong>$${amount}</strong> has been successfully processed.
+                            </p>
+
+                            <div style="background: linear-gradient(135deg, #fdf2f8 0%, #fff5f9 100%); border-radius: 16px; padding: 25px; margin: 30px 0; border: 1px solid #fce7f3;">
+                                <h3 style="color: #F2419C; margin-top: 0; font-size: 18px;">What You Get:</h3>
+                                <ul style="color: #555; line-height: 2; font-size: 15px; margin: 0; padding-left: 20px;">
+                                    <li>Access to exclusive ${tierName} courses</li>
+                                    <li>Premium learning materials & resources</li>
+                                    <li>Community support & networking</li>
+                                    <li>Certificate upon completion</li>
+                                </ul>
+                            </div>
+
+                            <div style="text-align: center; margin: 35px 0;">
+                                <a href="${this.configHelper.get('FRONTEND_URL')}/dashboard/courses"
+                                   style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #F2419C 0%, #ff6bba 100%);
+                                          color: white; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 16px;
+                                          box-shadow: 0 4px 15px rgba(242, 65, 156, 0.4);">
+                                    Start Learning Now
+                                </a>
+                            </div>
+
+                            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+                            <p style="font-size: 14px; color: #888; text-align: center;">
+                                Questions? Reply to this email or reach out on Instagram
+                                <a href="https://instagram.com/girlsincryptohub" style="color: #F2419C;">@girlsincryptohub</a>
+                            </p>
+                        </div>
+
+                        <div style="background: #1a0a2e; padding: 25px; text-align: center;">
+                            <p style="color: #888; font-size: 12px; margin: 0;">
+                                Girls in Crypto Hub - Empowering Women in Crypto
+                            </p>
+                        </div>
+                    </div>
+                `,
+            });
+            this.logger.log(`Tier purchase confirmation sent to ${email} for ${tierName}`);
+        } catch (error) {
+            this.logger.error('Tier purchase email sending failed', error);
+        }
+    }
+
+    /**
      * Legacy method - routes to appropriate email based on product type
      */
     async sendProductDelivery(email: string, productName: string, fileUrl: string, productType?: string, customerName?: string) {

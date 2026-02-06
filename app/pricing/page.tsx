@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { paymentsApi } from '../../lib/api';
@@ -61,11 +61,7 @@ export default function PricingPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadTiers();
-    }, [isAuthenticated]);
-
-    const loadTiers = async () => {
+    const loadTiers = useCallback(async () => {
         try {
             const tierData = await paymentsApi.getTiers();
             setTiers(tierData);
@@ -79,7 +75,11 @@ export default function PricingPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [isAuthenticated]);
+
+    useEffect(() => {
+        loadTiers();
+    }, [loadTiers]);
 
     const handlePurchase = async (tier: string) => {
         if (!isAuthenticated) {
@@ -90,8 +90,8 @@ export default function PricingPage() {
         setCheckoutLoading(tier);
         try {
             const result = await paymentsApi.createTierCheckout(tier);
-            if (result.url) {
-                window.location.href = result.url;
+            if (result.link) {
+                window.location.href = result.link;
             }
         } catch (error) {
             console.error('Checkout failed:', error);
